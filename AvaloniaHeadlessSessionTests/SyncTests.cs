@@ -52,9 +52,9 @@ public class SyncTests : AvaloniaHeadlessTestBase
     }
 
     [Fact]
-    public void Window_Size_ShouldBeSet()
+    public async Task Window_Size_ShouldBeSet()
     {
-        var size = RunInHeadlessSession(() =>
+        var size = await RunInHeadlessSession(() =>
         {
             // Arrange
             var window = new Window
