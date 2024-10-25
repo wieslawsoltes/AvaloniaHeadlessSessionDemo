@@ -3,41 +3,45 @@ using AvaloniaHeadlessSessionDemo;
 
 namespace AvaloniaHeadlessSessionTests;
 
-public abstract class AvaloniaHeadlessTestBase
+public abstract class AvaloniaHeadlessTestBase : IDisposable
 {
-    // Sync method
-    protected void RunInHeadlessSession(Action action)
+    private readonly HeadlessUnitTestSession _session;
+
+    public AvaloniaHeadlessTestBase()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
-        session.Dispatch(() =>
+        _session = Task.Run(() => HeadlessUnitTestSession.StartNew(typeof(App))).Result;
+    }
+
+    public void Dispose()
+    {
+        _session.Dispose();
+    }
+
+    protected Task RunInHeadlessSession(Action action)
+    {
+        return _session.Dispatch(() =>
         {
             action();
             return true;
-        }, CancellationToken.None).GetAwaiter().GetResult();
+        }, CancellationToken.None);
     }
 
-    // Sync method with return value
-    protected T RunInHeadlessSession<T>(Func<T> func)
+    protected Task<T> RunInHeadlessSession<T>(Func<T> func)
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
-        return session.Dispatch(func, CancellationToken.None).GetAwaiter().GetResult();
+        return _session.Dispatch(func, CancellationToken.None);
     }
 
-    // Async method
-    protected async Task RunInHeadlessSession(Func<Task> action)
+    protected Task RunInHeadlessSession(Func<Task> action)
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
-        await session.Dispatch(async () =>
+        return _session.Dispatch(async () =>
         {
             await action();
             return true;
         }, CancellationToken.None);
     }
 
-    // Async method with return value
-    protected async Task<T> RunInHeadlessSession<T>(Func<Task<T>> func)
+    protected Task<T> RunInHeadlessSession<T>(Func<Task<T>> func)
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
-        return await session.Dispatch(func, CancellationToken.None);
+        return _session.Dispatch(func, CancellationToken.None);
     }
 }
